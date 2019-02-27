@@ -6,34 +6,49 @@ import copy
 import sys
 import pylab
 
+BIT_LENGTH          = 100
+POP_SIZE            = 25
+PARA_BIAS           = 0.7
+HOST_BIAS           = 0.5
+VIRULENCE           = 1
+MUTATE_CHANCE       = 0.03
+GENERATIONS         = 600
+USE_SEED            = None
 
 class Participant():
     """Host or Parasite parent"""
-    bitList = [False] * 100
+    bitList = [False] * BIT_LENGTH
     score = 0
     fitness = 0
     bias = 0.5
 
     def __init__(self, bias):
-        self.bitList = [False] * 100   # TODO: make bit length a parameter
+        self.bitList = [False] * BIT_LENGTH
         self.bias = bias
 
     def mutate(self):
         newBitList = []
         for bit in self.bitList:
-            if random() < 0.03: # TODO: make this a parameter
+            if random() < MUTATE_CHANCE:
                 newBitList += [True] if random()<self.bias else [False]
             else:
                 newBitList += [bit]
         self.bitList = newBitList
 
-hostList = []
-paraList = []
-hostResultsList = []
-paraResultsList = []
-def mainLoop(nIters=100):
-    global hostList, paraList
+def compete(part1, part2):
+    part1.score = 0
+    part2.score = 0
+    if sum(part1.bitList) > sum(part2.bitList):
+        part1.score += 1
+    elif sum(part1.bitList) == sum(part2.bitList):
+        part1.score += 0.5
+        part2.score += 0.5
+    else: 
+        part2.score += 1
+
+def mainLoop(nIters):
     #initialise lists of participants
+    global hostList, paraList
     for x in range(POP_SIZE):
         hostList     += [Participant(HOST_BIAS)]
         paraList += [Participant(PARA_BIAS)]
@@ -47,25 +62,21 @@ def mainLoop(nIters=100):
             para.mutate()
             para.score = 0
 
-        #compete with 5 random opponents
-        for host in hostList:
-            for paraIndex in sample(range(POP_SIZE),5):#sample with replacement? compete with same opponent twice
-                para = paraList[paraIndex]
-                if host.bitList.count(True) > para.bitList.count(True):
-                    host.score += 1
-                    #print("host")
-                elif host.bitList.count(True) == para.bitList.count(True):
-                    host.score += 0.5
-                    para.score += 0.5
-                    #print("draw")
+        #shuffle both lists and have the two populations compete pairwise
+        for x in range(5):
+            shuffle(hostList)
+            shuffle(paraList)
+            for popIndex in range(POP_SIZE):
+                if sum(hostList[popIndex].bitList) > sum(paraList[popIndex].bitList):
+                    hostList[popIndex].score += 1
+                elif sum(hostList[popIndex].bitList) == sum(paraList[popIndex].bitList):
+                    hostList[popIndex].score += 0.5
+                    paraList[popIndex].score += 0.5
                 else: 
-                    para.score += 1
-                    #print("para")
-            host.fitness = host.score
-
-        maxScore = max([para.score for para in paraList])
+                    paraList[popIndex].score += 1
 
         #normalise scores and calculate fitness of parasites
+        maxScore = max([para.score for para in paraList])
         for para in paraList:
             para.score = para.score/maxScore
             para.fitness = ((2 * para.score) / (VIRULENCE)) + ((para.score * para.score) / (VIRULENCE * VIRULENCE))
@@ -100,17 +111,18 @@ def maxFitness(listParticipants):
 
     return best
 
+if USE_SEED is None:
+    USE_SEED = randrange(sys.maxsize)
+    rng = Random(USE_SEED)
+print("Seed was:", USE_SEED)
+seed(USE_SEED)
 
-POP_SIZE            = 25
-PARA_BIAS           = 0.8
-HOST_BIAS           = 0.5
-VIRULENCE           = 1
-randseed = randrange(sys.maxsize)
-rng = Random(randseed)
-print("Seed was:", randseed)
-seed(randseed)
 
-mainLoop(1000)
+hostList = []
+paraList = []
+hostResultsList = []
+paraResultsList = []
+mainLoop(GENERATIONS)
 plt.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], '.', color='red');
 plt.plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], '.', color='blue');
 plt.show()
