@@ -8,9 +8,9 @@ import pylab
 
 BIT_LENGTH          = 100
 POP_SIZE            = 25
-PARA_BIAS           = 0.7
-HOST_BIAS           = 0.5
-VIRULENCE           = 1
+PARA_BIAS           = 0.5
+HOST_BIAS           = 0.7
+VIRULENCE           = 1.0
 MUTATE_CHANCE       = 0.03
 GENERATIONS         = 600
 USE_SEED            = None
@@ -65,7 +65,6 @@ def mainLoop(nIters):
         #shuffle both lists and have the two populations compete pairwise
         for x in range(5):
             shuffle(hostList)
-            shuffle(paraList)
             for popIndex in range(POP_SIZE):
                 if sum(hostList[popIndex].bitList) > sum(paraList[popIndex].bitList):
                     hostList[popIndex].score += 1
@@ -78,10 +77,12 @@ def mainLoop(nIters):
         #normalise scores and calculate fitness of parasites
         maxScore = max([para.score for para in paraList])
         for para in paraList:
-            para.score = para.score/maxScore
-            para.fitness = ((2 * para.score) / (VIRULENCE)) + ((para.score * para.score) / (VIRULENCE * VIRULENCE))
+            para.score = float(para.score)/maxScore
+            para.fitness = ((2.0 * para.score) / (VIRULENCE)) + ((para.score * para.score) / (VIRULENCE * VIRULENCE))
 
         for host in hostList:
+            host.fitness = host.score
+            #print(host.score)
             hostResultsList.append([iteration,host.bitList.count(True)])
         for para in paraList:
             paraResultsList.append([iteration,para.bitList.count(True)])
@@ -90,13 +91,13 @@ def mainLoop(nIters):
         newHostList = []
         newParaList = []
         for index in range(POP_SIZE):
-            hostSample = [hostList[i] for i in sample(range(POP_SIZE),5)]
+            hostSample = [hostList[i] for i in choices(range(POP_SIZE),cum_weights=None,k=5)] #use choices for replacement
             best = hostSample[0]
             for host in hostSample:
                 best = host if host.fitness > best.fitness else best
             newHostList.append(copy.deepcopy(best))
 
-            paraSample = [paraList[i] for i in sample(range(POP_SIZE),5)]
+            paraSample = [paraList[i] for i in choices(range(POP_SIZE),cum_weights=None,k=5)]
             best = paraSample[0]
             for para in paraSample:
                 best = para if para.fitness > best.fitness else best
@@ -123,6 +124,6 @@ paraList = []
 hostResultsList = []
 paraResultsList = []
 mainLoop(GENERATIONS)
-plt.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], '.', color='red');
-plt.plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], '.', color='blue');
+plt.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1);
+plt.plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1);
 plt.show()
