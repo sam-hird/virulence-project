@@ -15,34 +15,23 @@ class Participant():
     bias = 0.5
 
     def __init__(self, bias):
-        self.bitList = [False] * 100
+        self.bitList = [False] * 100   # TODO: make bit length a parameter
         self.bias = bias
 
     def mutate(self):
         newBitList = []
         for bit in self.bitList:
-            if random() < 0.03:
+            if random() < 0.03: # TODO: make this a parameter
                 newBitList += [True] if random()<self.bias else [False]
             else:
                 newBitList += [bit]
         self.bitList = newBitList
 
-def compete(part1, part2):
-    part1.score = 0
-    part2.score = 0
-    if sum(part1.bitList) > sum(part2.bitList):
-        part1.score += 1
-    elif sum(part1.bitList) == sum(part2.bitList):
-        part1.score += 0.5
-        part2.score += 0.5
-    else: 
-        part2.score += 1
-
 hostList = []
 paraList = []
 hostResultsList = []
 paraResultsList = []
-def mainLoop(nIters=1):
+def mainLoop(nIters=100):
     global hostList, paraList
     #initialise lists of participants
     for x in range(POP_SIZE):
@@ -60,7 +49,7 @@ def mainLoop(nIters=1):
 
         #compete with 5 random opponents
         for host in hostList:
-            for paraIndex in sample(range(POP_SIZE),5):
+            for paraIndex in sample(range(POP_SIZE),5):#sample with replacement? compete with same opponent twice
                 para = paraList[paraIndex]
                 if host.bitList.count(True) > para.bitList.count(True):
                     host.score += 1
@@ -115,11 +104,11 @@ def maxFitness(listParticipants):
 POP_SIZE            = 25
 PARA_BIAS           = 0.8
 HOST_BIAS           = 0.5
-VIRULENCE           = .5
-#randseed = randrange(sys.maxsize)
-#rng = Random(randseed)
-#print("Seed was:", randseed)
-seed(8885448394944156554)
+VIRULENCE           = 1
+randseed = randrange(sys.maxsize)
+rng = Random(randseed)
+print("Seed was:", randseed)
+seed(randseed)
 
 mainLoop(1000)
 plt.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], '.', color='red');
