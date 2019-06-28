@@ -10,10 +10,10 @@ BIT_LENGTH      = 100
 POP_SIZE        = 25
 HOST_BIAS       = 0.5
 PARA_BIAS       = 0.9
-VIRULENCE       = 0.75
+VIRULENCE       = 1
 MUTATE_CHANCE   = 0.03
 GENERATIONS     = 600
-USE_SEED        = 3534566918815802929
+USE_SEED        = None
 
 class Participant():
   """Host or Parasite parent"""
@@ -47,7 +47,7 @@ def compete(part1, part2):
     part2.score += 1
 
 def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
-  global relFitness
+  global dGens
   for iteration in range(iterOffset, nIters):
     #mutate all participants and reset scores
     for host in hostList:
@@ -71,7 +71,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
           hostWins +=0.5
         else: 
           paraList[popIndex].score += 1
-    relFitness.append([iteration,hostWins/(5*POP_SIZE)])
+    dGens += 1 if (hostWins/(5*POP_SIZE)<0.025) else 0
     #normalise scores and calculate fitness of parasites
     maxScore = max([para.score for para in paraList])
     if maxScore > 0:
@@ -128,25 +128,23 @@ if USE_SEED is None:
 print("Seed was:", USE_SEED)
 seed(USE_SEED)
 
+MUTATE_CHANCE = float(sys.argv[1])
+VIRULENCE = float(sys.argv[2])
 
-#split virulence run
-(hostList, paraList) = initLists()
-hostResultsList = []
-paraResultsList = []
-relFitness = []
-(hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
-# (hostList, paraList) = mainLoop(GENERATIONS, 250, hostList, paraList, VIRULENCE)
-f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 1, 1]})
-ax1.xaxis.set_ticks_position('none')
-ax1.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1);
-ax1.plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1);
-ax2.set_ylim([0,1])
-ax2.spines['bottom'].set_visible(False)
-ax2.xaxis.set_ticks_position('none')
-ax2.tick_params(direction='in', left=True, right=True)
-ax2.plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
-ax3.set_ylim([0,1])
-ax3.spines['top'].set_visible(False)
-ax3.tick_params(direction='in', left=True, right=True)
-ax3.plot([a[0] for a in relFitness], [1-a[1] for a in relFitness], '.', color="black", markersize=1)
+file = open("results_" + sys.argv[1] + "_" + sys.argv[2] + ".txt", "w+")
+
+PARA_BIAS = 0.45
+samplesize = 10
+avgDGens = []
+for y in range(11):
+  dGens = 0
+  PARA_BIAS += 0.04 if abs(PARA_BIAS-0.95)<0.01 else 0.05
+  for x in range(samplesize):
+    hostResultsList = []
+    paraResultsList = []
+    (hostList, paraList) = initLists()
+    (hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
+  avgDGens.append([PARA_BIAS,dGens/samplesize]);
+file.write(str(avgDGens))
+
 plt.show()
