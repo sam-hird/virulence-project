@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 mutationrates = ["0.005","0.020","0.035","0.050"]
-virulences = ["0.5", "1.0", "0.75"]
+virulences = ["0.5", "1.0", "0.75", "phantom"]
 markers = ["s", "o", "x", "+"]
 
 f, ax = plt.subplots(1, 4, sharey=True)

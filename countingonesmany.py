@@ -59,9 +59,11 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
 
     #shuffle both lists and have the two populations compete pairwise
     hostWins = 0
+    nComps = 0
     for x in range(5):
       shuffle(hostList)
       for popIndex in range(POP_SIZE):
+        nComps += 1
         if sum(hostList[popIndex].bitList) > sum(paraList[popIndex].bitList):
           hostList[popIndex].score += 1
           hostWins+=1
@@ -71,14 +73,24 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
           hostWins +=0.5
         else: 
           paraList[popIndex].score += 1
-    dGens += 1 if (hostWins/(5*POP_SIZE)<0.025) else 0
-    #normalise scores and calculate fitness of parasites
-    maxScore = max([para.score for para in paraList])
-    if maxScore > 0:
-      for para in paraList:
-        para.score = float(para.score)/maxScore
-        para.fitness = ((2.0 * para.score) / (virulence)) - ((para.score * para.score) / (virulence * virulence))
 
+
+    #calculate fitnesses
+    if virulence > 0: #for reduced virulence
+      #normalise scores and calculate fitness of parasites
+      maxScore = max([para.score for para in paraList])
+      if maxScore > 0:
+        for para in paraList:
+          para.score = float(para.score)/maxScore
+          para.fitness = ((2.0 * para.score) / (virulence)) - ((para.score * para.score) / (virulence * virulence))
+    else: #for when using phantom parasite
+      for para in paraList:
+        if para.score > 4.5:
+          para.score = 4.0
+        para.fitness = para.score
+
+
+    dGens += 1 if (hostWins==0) else 0
 
     for host in hostList:
       host.fitness = host.score
@@ -129,12 +141,15 @@ print("Seed was:", USE_SEED)
 seed(USE_SEED)
 
 MUTATE_CHANCE = float(sys.argv[1])
-VIRULENCE = float(sys.argv[2])
+if sys.argv[2] == "phantom":
+  VIRULENCE = -1
+else:
+  VIRULENCE = float(sys.argv[2])
 
 file = open("results_" + sys.argv[1] + "_" + sys.argv[2] + ".txt", "w+")
 
 PARA_BIAS = 0.45
-samplesize = 10
+samplesize = 50
 avgDGens = []
 for y in range(11):
   dGens = 0
@@ -146,5 +161,3 @@ for y in range(11):
     (hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
   avgDGens.append([PARA_BIAS,dGens/samplesize]);
 file.write(str(avgDGens))
-
-plt.show()
