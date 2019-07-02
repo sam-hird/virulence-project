@@ -21,6 +21,7 @@ class Participant():
   fitness = 0
   bias = 0.5
 
+
   def __init__(self, bias):
     self.bitList = []
     for x in range(BIT_LENGTH):
@@ -43,9 +44,11 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
     for host in hostList:
       host.mutate()
       host.score = 0
+      host.victors = []
     for para in paraList:
       para.mutate()
       para.score = 0
+      para.victors = []
 
     #shuffle both lists and have the two populations compete pairwise
     hostWins = 0
@@ -62,13 +65,26 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
 
         if nMatching > 30:
           #host wins
-          hostList[popIndex].score += 1
+          if RESOURCE_SHARING:
+            paraList[popIndex].victors += [hostList[popIndex]]
+          else:
+            hostList[popIndex].score += 1
           hostWins += 1
         else:
           #para wins
-          paraList[popIndex].score += 1
+          if RESOURCE_SHARING:
+            hostList[popIndex].victors += [paraList[popIndex]]
+          else:
+            paraList[popIndex].score += 1
 
-    relFitness.append([iteration,hostWins/(5*POP_SIZE)])
+    if RESOURCE_SHARING:
+      for popIndex in range(POP_SIZE):
+        for victor in hostList[popIndex].victors:
+          victor.score += 1/len(hostList[popIndex].victors)
+        for victor in paraList[popIndex].victors:
+          victor.score += 1/len(paraList[popIndex].victors)
+
+    relFitness.append([iteration,hostWins/(10*POP_SIZE)])
 
     #normalise scores and calculate fitness of parasites
     maxScore = max([para.score for para in paraList])
@@ -119,6 +135,7 @@ print("Seed was:", USE_SEED)
 seed(USE_SEED)
 
 VIRULENCE = 0.5
+RESOURCE_SHARING = True
 
 #split virulence run
 (hostList, paraList) = initLists()
