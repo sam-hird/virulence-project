@@ -16,7 +16,11 @@ for graph in range(4):
     array = ast.literal_eval(contents)
 
     #add data to graph
-    ax[graph].plot([a[0] for a in array] ,[a[1] for a in array], marker=markers[dataset], fillstyle="none", markersize=10, linestyle="--")
+    ax[graph].plot([a[0] for a in array] ,[a[1] for a in array], marker=markers[dataset], fillstyle="none", markersize=10, linestyle=":", label="λ="+virulences[dataset] if dataset<3 else virulences[dataset])
+    ax[graph].set_xlabel("Parasite Bias")
+  ax[graph].legend()
+  ax[graph].title.set_text("Mutation rate = " + mutationrates[graph])
+ax[0].set_ylabel("Disengaged Generations")
 
 plt.show()
   

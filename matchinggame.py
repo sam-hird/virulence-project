@@ -7,13 +7,12 @@ import sys
 import pylab
 
 BIT_LENGTH      = 100
-POP_SIZE        = 25
+POP_SIZE        = 50
 HOST_BIAS       = 0.5
-PARA_BIAS       = 0.9
-VIRULENCE       = 0.75
+PARA_BIAS       = 0.5
 MUTATE_CHANCE   = 0.03
 GENERATIONS     = 600
-USE_SEED        = 3534566918815802929
+USE_SEED        = None
 
 class Participant():
   """Host or Parasite parent"""
@@ -23,7 +22,9 @@ class Participant():
   bias = 0.5
 
   def __init__(self, bias):
-    self.bitList = [False] * BIT_LENGTH
+    self.bitList = []
+    for x in range(BIT_LENGTH):
+      self.bitList += [False] if random()<bias else [True]
     self.bias = bias
 
   def mutate(self):
@@ -34,7 +35,6 @@ class Participant():
       else:
         newBitList += [bit]
     self.bitList = newBitList
-
 
 def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
   global relFitness
@@ -49,19 +49,27 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
 
     #shuffle both lists and have the two populations compete pairwise
     hostWins = 0
-    for x in range(5):
+    for x in range(10):
       shuffle(hostList)
       for popIndex in range(POP_SIZE):
-        if sum(hostList[popIndex].bitList) > sum(paraList[popIndex].bitList):
+        x  = sum(paraList[popIndex].bitList)
+        p1 = 0.5*(1+np.tanh((x-50)/7))
+        matching = True if random()<p1 else False
+        nMatching = 0
+        for n in range(BIT_LENGTH):
+          if paraList[popIndex].bitList[n] == matching and hostList[popIndex].bitList[n] == matching:
+            nMatching += 1
+
+        if nMatching > 30:
+          #host wins
           hostList[popIndex].score += 1
-          hostWins+=1
-        elif sum(hostList[popIndex].bitList) == sum(paraList[popIndex].bitList):
-          hostList[popIndex].score += 0.5
-          paraList[popIndex].score += 0.5
-          hostWins +=0.5
-        else: 
+          hostWins += 1
+        else:
+          #para wins
           paraList[popIndex].score += 1
+
     relFitness.append([iteration,hostWins/(5*POP_SIZE)])
+
     #normalise scores and calculate fitness of parasites
     maxScore = max([para.score for para in paraList])
     if maxScore > 0:
@@ -69,12 +77,10 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
         para.score = float(para.score)/maxScore
         para.fitness = ((2.0 * para.score) / (virulence)) - ((para.score * para.score) / (virulence * virulence))
 
-
     for host in hostList:
       host.fitness = host.score
-      #print(host.score)
       hostResultsList.append([iteration,host.bitList.count(True)])
-    for para in paraList:
+    for para in paraList:      
       paraResultsList.append([iteration,para.bitList.count(True)])
 
     #asexual breeeding with tournement size 5
@@ -112,6 +118,7 @@ if USE_SEED is None:
 print("Seed was:", USE_SEED)
 seed(USE_SEED)
 
+VIRULENCE = 0.5
 
 #split virulence run
 (hostList, paraList) = initLists()
@@ -124,6 +131,8 @@ f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios
 ax1.xaxis.set_ticks_position('none')
 ax1.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1);
 ax1.plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1);
+ax1.set_ylim([0,100])
+ax1.set_xlim([0,GENERATIONS])
 ax2.set_ylim([0,1])
 ax2.spines['bottom'].set_visible(False)
 ax2.xaxis.set_ticks_position('none')

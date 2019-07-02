@@ -35,17 +35,6 @@ class Participant():
         newBitList += [bit]
     self.bitList = newBitList
 
-def compete(part1, part2):
-  part1.score = 0
-  part2.score = 0
-  if sum(part1.bitList) > sum(part2.bitList):
-    part1.score += 1
-  elif sum(part1.bitList) == sum(part2.bitList):
-    part1.score += 0.5
-    part2.score += 0.5
-  else: 
-    part2.score += 1
-
 def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
   global dGens
   for iteration in range(iterOffset, nIters):
@@ -118,12 +107,6 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
     paraList = newParaList
   return (hostList, paraList)
 
-def maxFitness(listParticipants):
-  best = list(listParticipants)[0]
-  for part in list(listParticipants):
-    best = part if part.fitness > best.fitness else best
-
-  return best
 def initLists():  
   #initialise lists of participants
   hostList = []
@@ -146,7 +129,7 @@ if sys.argv[2] == "phantom":
 else:
   VIRULENCE = float(sys.argv[2])
 
-file = open("results_" + sys.argv[1] + "_" + sys.argv[2] + ".txt", "w+")
+file = open("countingonesresults\\results_" + sys.argv[1] + "_" + sys.argv[2] + ".txt", "w+")
 
 PARA_BIAS = 0.45
 samplesize = 50
