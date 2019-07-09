@@ -55,7 +55,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
     for x in range(10):
       shuffle(hostList)
       for popIndex in range(POP_SIZE):
-        x  = sum(paraList[popIndex].bitList)
+        x  = paraList[popIndex].bitList.count(True)
         p1 = 0.5*(1+np.tanh((x-50)/7))
         matching = True if random()<p1 else False
         nMatching = 0
@@ -63,7 +63,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
           if paraList[popIndex].bitList[n] == matching and hostList[popIndex].bitList[n] == matching:
             nMatching += 1
 
-        if nMatching > 30:
+        if nMatching >= 30:
           #host wins
           if RESOURCE_SHARING:
             paraList[popIndex].victors += [hostList[popIndex]]
@@ -79,8 +79,10 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
 
     if RESOURCE_SHARING:
       for popIndex in range(POP_SIZE):
+        #add score to paras
         for victor in hostList[popIndex].victors:
           victor.score += 1/len(hostList[popIndex].victors)
+        #add score to hosts
         for victor in paraList[popIndex].victors:
           victor.score += 1/len(paraList[popIndex].victors)
 
