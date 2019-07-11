@@ -75,7 +75,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
     else: #for when using phantom parasite
       for para in paraList:
         if para.score > 4.5:
-          para.score = 4.0
+          para.score -= 1.0
         para.fitness = para.score
 
 

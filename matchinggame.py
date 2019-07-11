@@ -10,7 +10,7 @@ BIT_LENGTH      = 100
 POP_SIZE        = 50
 HOST_BIAS       = 0.5
 PARA_BIAS       = 0.5
-MUTATE_CHANCE   = 0.03
+MUTATE_CHANCE   = 0.003
 GENERATIONS     = 600
 USE_SEED        = None
 
@@ -129,6 +129,7 @@ def initLists():
     paraList += [Participant(PARA_BIAS)]
   return (hostList, paraList)
 
+USE_SEED = 4647813385336841684
 
 if USE_SEED is None:
   USE_SEED = randrange(sys.maxsize)
@@ -136,7 +137,7 @@ if USE_SEED is None:
 print("Seed was:", USE_SEED)
 seed(USE_SEED)
 
-VIRULENCE = 0.5
+VIRULENCE = 1
 RESOURCE_SHARING = True
 
 #split virulence run
