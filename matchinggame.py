@@ -14,7 +14,9 @@ MUTATE_CHANCE    = 0.03
 GENERATIONS      = 600
 USE_SEED         = None
 VIRULENCE        = 1
-RESOURCE_SHARING = True
+RESOURCE_SHARING = False
+SELECTION_SIZE   = 5
+COMPETITION_SIZE = 10
 
 class Participant():
   """Host or Parasite parent"""
@@ -55,7 +57,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
 
     #shuffle both lists and have the two populations compete pairwise
     hostWins = 0
-    for x in range(10):
+    for x in range(COMPETITION_SIZE):
       shuffle(hostList)
       for popIndex in range(POP_SIZE):
         x  = paraList[popIndex].bitList.count(True)
@@ -90,7 +92,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
         for loserIndex in hostList[popIndex].loserIndices:
           hostList[loserIndex].score += 1.0/paraList[loserIndex].nLosses
 
-    relFitness.append([iteration,hostWins/(10*POP_SIZE)])
+    relFitness.append([iteration,hostWins/(COMPETITION_SIZE*POP_SIZE)])
 
     #normalise scores and calculate fitness of parasites
     maxScore = max([para.score for para in paraList])
@@ -109,13 +111,13 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
     newHostList = []
     newParaList = []
     for index in range(POP_SIZE):
-      hostSample = [hostList[i] for i in choices(range(POP_SIZE),cum_weights=None,k=5)] #use choices for replacement
+      hostSample = [hostList[i] for i in choices(range(POP_SIZE),k=SELECTION_SIZE)] #use choices for replacement
       best = hostSample[0]
       for host in hostSample:
         best = host if host.fitness > best.fitness else best
       newHostList.append(copy.deepcopy(best))
 
-      paraSample = [paraList[i] for i in choices(range(POP_SIZE),cum_weights=None,k=5)]
+      paraSample = [paraList[i] for i in choices(range(POP_SIZE),k=SELECTION_SIZE)]
       best = paraSample[0]
       for para in paraSample:
         best = para if para.fitness > best.fitness else best
