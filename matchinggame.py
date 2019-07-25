@@ -6,17 +6,18 @@ import copy
 import sys
 import pylab
 
-BIT_LENGTH       = 100
-POP_SIZE         = 50
-HOST_BIAS        = 0.5
-PARA_BIAS        = 0.5
-MUTATE_CHANCE    = 0.03
-GENERATIONS      = 600
-USE_SEED         = None
-VIRULENCE        = 1
-RESOURCE_SHARING = False
-SELECTION_SIZE   = 5
-COMPETITION_SIZE = 10
+BIT_LENGTH        = 100
+POP_SIZE          = 50
+HOST_BIAS         = 0.5
+PARA_BIAS         = 0.5
+MUTATE_CHANCE     = 0.03
+GENERATIONS       = 600
+USE_SEED          = None
+VIRULENCE         = 1
+RESOURCE_SHARING  = False
+SELECTION_SIZE    = 5
+COMPETITION_SIZE  = 10
+THRESHOLD         = 35
 
 class Participant():
   """Host or Parasite parent"""
@@ -68,7 +69,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
           if paraList[popIndex].bitList[n] == matching and hostList[popIndex].bitList[n] == matching:
             nMatching += 1
 
-        if nMatching >= 30:
+        if nMatching >= THRESHOLD:
           #host wins
           if RESOURCE_SHARING:
             hostList[popIndex].loserIndices += [popIndex]
