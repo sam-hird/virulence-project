@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 mutationrates = ["0.005","0.020","0.035","0.050"]
-virulences = ["0.5", "1.0", "0.75", "phantom3"]
+virulences = ["0.5", "1.0", "0.75", "phantom"]
 markers = ["s", "o", "x", "+"]
 
 plt.rc('font', size=14)
@@ -19,15 +19,15 @@ for graph in range(4):
 
     #add data to graph
     ax[graph].plot([a[0] for a in array] ,[a[1] for a in array], zorder=10, clip_on=False, marker=markers[dataset], fillstyle="none", markersize=10, linestyle=":", label="λ="+virulences[dataset] if dataset<3 else 'phantom')
-    ax[graph].set_xlabel("Parasite Bias")
+    ax[graph].set_xlabel("Parasite Bias", fontsize=14)
   ax[graph].legend()
-  ax[graph].title.set_text("Mutation rate = " + mutationrates[graph])
+  ax[graph].set_title("Mutation rate = " + mutationrates[graph], fontsize=18)
   ax[graph].set_aspect(1/1200)
   ax[graph].set_xlim([0.5,1])
   ax[graph].set_ylim([0,600])
   ax[graph].grid(which='major', linestyle=':')
   ax[graph].set_yticks(np.arange(0,601,150))
-ax[0].set_ylabel("Disengaged Generations")
+ax[0].set_ylabel("Disengaged Generations", fontsize=14)
 
 plt.show()
   

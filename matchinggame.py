@@ -1,6 +1,7 @@
 from random import *
 from operator import attrgetter
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 import numpy as np
 import copy
 import sys
@@ -13,11 +14,11 @@ PARA_BIAS         = 0.5
 MUTATE_CHANCE     = 0.03
 GENERATIONS       = 600
 USE_SEED          = None
-VIRULENCE         = 0.5
-RESOURCE_SHARING  = True
 SELECTION_SIZE    = 5
 COMPETITION_SIZE  = 10
-THRESHOLD         = 35
+THRESHOLD         = 30
+VIRULENCE         = 0.5
+RESOURCE_SHARING  = True
 
 class Participant():
   """Host or Parasite parent"""
@@ -141,30 +142,98 @@ if USE_SEED is None:
   USE_SEED = randrange(sys.maxsize)
   rng = Random(USE_SEED)
 print("Seed was:", USE_SEED)
+
+
+
+fig = plt.figure(figsize=[10,10])
+gs0 = fig.add_gridspec( 2, 2, width_ratios  = [1,1], height_ratios = [1,1], hspace=0.2, wspace=0.1)
+
+gs = []
+ax = []
+
+for x in range(4):
+  gs.append(gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=gs0[x], hspace=0.075, height_ratios=[5,1]))
+  ax.append(plt.subplot(gs[x][0], xlim=[0,GENERATIONS], ylim=[0,BIT_LENGTH]))
+  ax.append(plt.subplot(gs[x][1], xlim=[0,GENERATIONS], ylim=[0,1]))
+
+
+#max virulence, no resource sharing
 seed(USE_SEED)
-
-
-
-#split virulence run
+VIRULENCE = 1.0
+RESOURCE_SHARING = False
 (hostList, paraList) = initLists()
 hostResultsList = []
 paraResultsList = []
 relFitness = []
 (hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
-# (hostList, paraList) = mainLoop(GENERATIONS, 250, hostList, paraList, VIRULENCE)
-f, (ax1, ax2, ax3) = plt.subplots(3, 1, sharex=True, gridspec_kw={'height_ratios': [5, 1, 1]})
-ax1.xaxis.set_ticks_position('none')
-ax1.plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1);
-ax1.plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1);
-ax1.set_ylim([0,100])
-ax1.set_xlim([0,GENERATIONS])
-ax2.set_ylim([0,1])
-ax2.spines['bottom'].set_visible(False)
-ax2.xaxis.set_ticks_position('none')
-ax2.tick_params(direction='in', left=True, right=True)
-ax2.plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
-ax3.set_ylim([0,1])
-ax3.spines['top'].set_visible(False)
-ax3.tick_params(direction='in', left=True, right=True)
-ax3.plot([a[0] for a in relFitness], [1-a[1] for a in relFitness], '.', color="black", markersize=1)
+
+ax[0].set_title("max virulence, no resource sharing".title(), fontsize=14)
+ax[0].xaxis.set_visible(False)
+ax[0].plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1)
+ax[0].plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1)
+ax[0].axhline(y=PARA_BIAS*BIT_LENGTH, linestyle=':', color='black')
+
+ax[1].tick_params(direction='in', left=True, right=True)
+ax[1].plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
+
+
+#max virulence, with resource sharing
+seed(USE_SEED)
+VIRULENCE = 1.0
+RESOURCE_SHARING = True
+(hostList, paraList) = initLists()
+hostResultsList = []
+paraResultsList = []
+relFitness = []
+(hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
+
+ax[2].set_title("max virulence, with resource sharing".title(), fontsize=14)
+ax[2].xaxis.set_visible(False)
+ax[2].plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1)
+ax[2].plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1)
+ax[2].axhline(y=PARA_BIAS*BIT_LENGTH, linestyle=':', color='black')
+
+ax[3].tick_params(direction='in', left=True, right=True)
+ax[3].plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
+
+
+#null virulence, no resource sharing
+seed(USE_SEED)
+VIRULENCE = 0.5
+RESOURCE_SHARING = False
+(hostList, paraList) = initLists()
+hostResultsList = []
+paraResultsList = []
+relFitness = []
+(hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
+
+ax[4].set_title("null virulence, no resource sharing".title(), fontsize=14)
+ax[4].xaxis.set_visible(False)
+ax[4].plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1)
+ax[4].plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1)
+ax[4].axhline(y=PARA_BIAS*BIT_LENGTH, linestyle=':', color='black')
+
+ax[5].tick_params(direction='in', left=True, right=True)
+ax[5].plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
+
+
+#null virulence, with resource sharing
+seed(USE_SEED)
+VIRULENCE = 0.5
+RESOURCE_SHARING = True
+(hostList, paraList) = initLists()
+hostResultsList = []
+paraResultsList = []
+relFitness = []
+(hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, VIRULENCE)
+
+ax[6].set_title("null virulence, with resource sharing".title(), fontsize=14)
+ax[6].xaxis.set_visible(False)
+ax[6].plot([a[0] for a in hostResultsList], [a[1] for a in hostResultsList], 'o', color='red', markersize=0.1)
+ax[6].plot([a[0] for a in paraResultsList], [a[1] for a in paraResultsList], 'o', color='blue', markersize=0.1)
+ax[6].axhline(y=PARA_BIAS*BIT_LENGTH, linestyle=':', color='black')
+
+ax[7].tick_params(direction='in', left=True, right=True)
+ax[7].plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
+
 plt.show()

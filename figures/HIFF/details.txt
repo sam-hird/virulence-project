@@ -1,0 +1,44 @@
+type1:
+BIT_LENGTH            = 32
+POP_SIZE              = 25
+HOST_BIAS             = 0.5
+PARA_BIAS             = 0.5
+HOST_MUTATE_CHANCE    = 0.02
+PARA_MUTATE_CHANCE    = 0.02
+GENERATIONS           = 1000
+USE_SEED              = None
+VIRULENCE             = 1
+SELECTION_SIZE        = 10
+COMPETITION_SIZE      = 10
+THRESHOLD             = 1.0
+INIT_METHOD           = 1  # initialised based on bias
+
+type2:
+BIT_LENGTH            = 32
+POP_SIZE              = 25
+HOST_BIAS             = 0.5
+PARA_BIAS             = 0.5
+HOST_MUTATE_CHANCE    = 0.02
+PARA_MUTATE_CHANCE    = 0.02
+GENERATIONS           = 1000
+USE_SEED              = None
+VIRULENCE             = 1
+SELECTION_SIZE        = 10
+COMPETITION_SIZE      = 10
+THRESHOLD             = 1.0
+INIT_METHOD           = 2  # init paras all 0
+
+type3:
+BIT_LENGTH            = 32
+POP_SIZE              = 25
+HOST_BIAS             = 0.5
+PARA_BIAS             = 0.05
+HOST_MUTATE_CHANCE    = 0.02
+PARA_MUTATE_CHANCE    = 0.02
+GENERATIONS           = 1000
+USE_SEED              = None
+VIRULENCE             = 1
+SELECTION_SIZE        = 10
+COMPETITION_SIZE      = 10
+THRESHOLD             = 1.0
+INIT_METHOD           = 2
