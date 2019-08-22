@@ -5,6 +5,7 @@ import numpy as np
 import copy
 import sys
 import pylab
+import itertools
 
 def recursiveTransform(bitString):
   if len(bitString)==1:
@@ -32,19 +33,51 @@ def recursiveFitness(bitString):
 def simpleFitness(bit):
   return 1 if bit != None else 0
 
-def randomList():
-  returnList = []
-  for x in range(8):
-    returnList += 0 if random() < 0.5 else 1
-  return returnList
+# resultsList = [] # [[n1s, score]]
+# bestScores  = []
+# worstScores = []
 
-hostLists = [[0,1,0,1,0,1,0,1], [0,0,1,1,0,0,1,1], [0,0,0,0,1,1,1,1], [0,0,0,0,0,0,0,0], [1,1,1,1,1,1,1,1]]
+# for n1s in range(32 + 1):
+#   n0s = 32-n1s
+#   testList = [0] * n0s + [1] * n1s
+#   bestScore = 0
+#   worstScore = recursiveFitness([0]*32)
+#   for iteration in range(1000):
+#     shuffle(testList)
+#     score = recursiveFitness(testList)
+#     resultsList.append([n1s, score])
+#     if score > bestScore:
+#       bestScore = score
+#     if score < worstScore:
+#       worstScore = score
+#   bestScores.append([n1s,bestScore])
+#   worstScores.append([n1s.worstScore])
 
+# plt.plot([a[0] for a in resultsList], [a[1] for a in resultsList], 'o', color='red', markersize=0.1)
+# plt.xlim([0, 32])
+# plt.ylim([0, recursiveFitness([0]*32)])
 
+# plt.show()
+# for item in list(itertools.product([0, 1], repeat=4)):
+#   print(item)
+#   print(recursiveFitness(item))
 
-for x in range(20):
-  paraLists = []
-  for i in range(5):
-    paraLists.append((randomList()))
-  for listx in hostLists:
-    print(recursiveFitness(listx))
+def mutate(bitList):
+  newBitList = []
+  for bit in bitList:
+    if random() < 0.03:
+      newBitList += [1] if random()<0.5 else [0]
+    else:
+      newBitList += [bit]
+  return newBitList
+
+lst = [0,0,1,1]
+trials = 10000000
+counter = 0
+
+for x in range(trials):
+  if mutate(lst) == [0,0,0,0] or mutate(lst) == [1,1,1,1]:
+    counter+=1
+
+print(trials/counter)
+
