@@ -16,16 +16,16 @@ BIT_LENGTH            = 32
 POP_SIZE              = 10
 HOST_BIAS             = 0.5
 PARA_BIAS             = 0.5
-HOST_MUTATE_CHANCE    = 0.02
-PARA_MUTATE_CHANCE    = 0.02
+HOST_MUTATE_CHANCE    = 0.03
+PARA_MUTATE_CHANCE    = 0.03
 GENERATIONS           = 1000
-USE_SEED              = 5948313266577641547
+USE_SEED              = None
 VIRULENCE             = 1
 SELECTION_SIZE        = 5
 COMPETITION_SIZE      = 5
-THRESHOLD             = 1.0
-INIT_METHOD           = 1  # initialised based on bias
-MUTATE_METHOD         = 2
+THRESHOLD             = 0.9
+INIT_METHOD           = 1
+MUTATE_METHOD         = 3
 
 
 class Participant():
@@ -43,7 +43,7 @@ class Participant():
     if bitList == []:
       self.bitList = []
       for x in range(BIT_LENGTH):
-        self.bitList += [1] if random()<bias else [0]
+        self.bitList += [1] if random()<0.5 else [0]
     else:
       self.bitList = bitList
 
@@ -62,24 +62,21 @@ class Participant():
 
     elif method == 2: 
       newBitList = []
-      for bit in range(len(self.bitList)):
-        if bit == 0:
-          if random() < self.mutationRate:
-            newBitList += [self.bitList[bit+1]]
-          else:
-            newBitList += [self.bitList[bit]]
-
+      for bit in range(len(self.bitList)):        
+        if random() < self.mutationRate:
+          newBitList += ([self.bitList[bit+1]] if bit == 0 else [self.bitList[bit-1]])
         else:
-          if random() < self.mutationRate:
-            newBitList += [self.bitList[bit-1]]
-          else:
-            newBitList += [self.bitList[bit]]
+          newBitList += [self.bitList[bit]]
+      self.bitList = newBitList
 
-        # else:
-        #   if random() < self.mutationRate:
-        #     newBitList += [self.bitList[bit+1]] if random()<self.bias else [self.bitList[bit-1]]
-        #   else:
-        #     newBitList += [self.bitList[bit]]
+    elif method == 3: 
+      newBitList = []
+      for bit in range(len(self.bitList)):        
+        if random() < self.mutationRate:
+          neighbor = (self.bitList[bit+1] if bit == 0 else self.bitList[bit-1])
+          newBitList += [neighbor] if random() < self.bias else [1 - neighbor]
+        else:
+          newBitList += [self.bitList[bit]]
       self.bitList = newBitList
 
 
@@ -127,8 +124,8 @@ def maskLists(mask, bits):
 
 
 def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
-  global hostAbsHiffScores, hostRelHiffScores, hostNum1s
-  global paraAbsHiffScores, paraRelHiffScores, paraNum1s
+  global hostHiffScores, hostProportions, hostNum1s, hostConnectednesses
+  global                 paraProportions, paraNum1s, paraConnectednesses
   for iteration in range(iterOffset, nIters):
     #mutate all participants and reset scores
     for host in hostList:
@@ -144,24 +141,19 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
       shuffle(hostList)
       for popIndex in range(POP_SIZE):
         #mask lists
-        (list1, list2) = maskLists(paraList[popIndex].bitList,hostList[popIndex].bitList)
+        (masked1, masked2) = maskLists(paraList[popIndex].bitList,hostList[popIndex].bitList)
+        (mask1 , mask2 ) = maskLists(paraList[popIndex].bitList,[1]*BIT_LENGTH)
 
         #record mask details
-        maskHIFF = recursiveFitness(list(map(lambda x: 1 if x==1 else None, paraList[popIndex].bitList)))
-        maskHIFFMax = 0 if paraList[popIndex].bitList.count(1) == 0 else recursiveFitness([1]*paraList[popIndex].bitList.count(1))
-        connectedness =   0 if maskHIFFMax == 0 else maskHIFF / maskHIFFMax
-        connectednesses.append([iteration,connectedness])
+        connectedness1 = 0 if (mask1.count(1) == 0) else recursiveFitness(mask1) / recursiveFitness([1] * mask1.count(1) + [None] * (BIT_LENGTH - mask1.count(1)))
+        hostProportion = 0 if recursiveFitness(mask1) == 0 else recursiveFitness(masked1)/recursiveFitness(mask1)
 
-        #calculate scores
-        hostAbsHiffScore = recursiveFitness(list1)
-        hostScore =  1.0 if maxFitness(list1) == 0 else hostAbsHiffScore / maxFitness(list1)
+        #lines from mask-complement system
+        #connectedness2 = 0 if (mask2.count(1) == 0) else recursiveFitness(mask2) / recursiveFitness([1] * mask2.count(1) + [None] * (BIT_LENGTH - mask2.count(1)))
+        #paraProportion = 0 if recursiveFitness(mask2) == 0 else recursiveFitness(masked2)/recursiveFitness(mask2) 
 
-        #store results
-        hostAbsHiffScores.append([iteration, hostAbsHiffScore])
-        hostRelHiffScores.append([iteration, hostScore])
-
-        #see who wins
-        if hostScore >= THRESHOLD:
+        #calulate winner of this round
+        if hostProportion >= THRESHOLD:
           #host wins
           hostList[popIndex].score += 1
           hostWins +=1
@@ -169,8 +161,18 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
           #para wins
           paraList[popIndex].score += 1
 
+        #store details about this round
+        hostConnectednesses.append([iteration,connectedness1])
+        hostProportions.append([iteration,hostProportion])
+
+        #lines from mask-complement system
+        #paraConnectednesses.append([iteration,connectedness2])
+        #paraProportions.append([iteration,paraProportion])
+
+
     for host in hostList:
       host.fitness = host.score
+      hostHiffScores.append([iteration, recursiveFitness(host.bitList)])
       hostNum1s.append([iteration,host.bitList.count(1)])
     for para in paraList:
       paraNum1s.append([iteration,para.bitList.count(1)])
@@ -184,7 +186,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
         para.score = float(para.score)/maxScore
         para.fitness = ((2.0 * para.score) / (virulence)) - ((para.score * para.score) / (virulence * virulence))
 
-    #asexual breeeding with tournement size 5
+    #asexual breeeding
     newHostList = []
     newParaList = []
     for index in range(POP_SIZE):
@@ -228,10 +230,11 @@ if USE_SEED is None:
 print("Seed was:", USE_SEED)
 
 #the different virulence values being used
-virulences = [0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+virulences = [0.5, 0.75, 1.0]
 
 #define figure's size
 fig = plt.figure(figsize=[10,5*len(virulences)])
+
 #split figure into len(vir) columns
 gs0 = fig.add_gridspec( 1, len(virulences), wspace=0.05)
 
@@ -240,13 +243,18 @@ for x in range(len(virulences)):
 
   #reset all collection lists and seed
   seed(USE_SEED)  
+
+  hostHiffScores    = [] #[[iteration, HiffScore]]                    # actual hiff scores 
+
+  hostProportions   = [] #[[iteration, HiffScore/maxScore]]           # percentage of possible hiff score for given mask
+  paraProportions   = [] #[[iteration, HiffScore/maxScore]]           # percentage of possible hiff score for given mask
+
   hostNum1s           = [] #[[iteration, num1s]]
   paraNum1s           = [] #[[iteration, num1s]]
-  hostAbsHiffScores   = [] #[[iteration, HiffScore]]                    # actual hiff scores 
-  paraAbsHiffScores   = [] #[[iteration, HiffScore]]                    # actual hiff scores 
-  hostRelHiffScores   = [] #[[iteration, HiffScore/maxScore]]           # percentage of possible hiff score for given mask
-  paraRelHiffScores   = [] #[[iteration, HiffScore/maxScore]]           # percentage of possible hiff score for given mask
-  connectednesses     = [] #[[iteration, connectedness]]
+
+  hostConnectednesses     = [] #[[iteration, connectedness]]
+  paraConnectednesses     = [] #[[iteration, connectedness]]
+
   relFitness          = [] #[[iteration, relFitness]]                   # percentage of competitions won by host
 
   #initialize lists of participants
@@ -254,49 +262,51 @@ for x in range(len(virulences)):
   #do iterations with current virulence
   (hostList, paraList) = mainLoop(GENERATIONS, 0, hostList, paraList, virulences[x])
   print('virulence = ' + str(virulences[x]))
+  #show resulting hosts in console
   for host in hostList:
     print(host.bitList);
   print('\n')
   #divide up gridspec and assign array of sublplots
   gs = gridspec.GridSpecFromSubplotSpec(5,1, subplot_spec=gs0[x], hspace=0.05)
+  gs.height_ratios = [5,5,5,5,1]
   ax = []
-  ax.append(plt.subplot(gs[0], xlim=[0,GENERATIONS], xticks=[], ylim=[0,1]))
-  ax.append(plt.subplot(gs[1], xlim=[0,GENERATIONS], xticks=[], ylim=[0,maxFitness([1]*BIT_LENGTH)]))
-  ax.append(plt.subplot(gs[2], xlim=[0,GENERATIONS], xticks=[], ylim=[0,1]))
+  ax.append(plt.subplot(gs[0], xlim=[0,GENERATIONS], xticks=[], ylim=[0,recursiveFitness([1]*BIT_LENGTH)]))
+  ax.append(plt.subplot(gs[1], xlim=[0,GENERATIONS], xticks=[], ylim=[0,1]))
+  ax.append(plt.subplot(gs[2], xlim=[0,GENERATIONS], xticks=[], ylim=[0,BIT_LENGTH]))
   ax.append(plt.subplot(gs[3], xlim=[0,GENERATIONS], xticks=[], ylim=[0,1]))
   ax.append(plt.subplot(gs[4], xlim=[0,GENERATIONS], ylim=[0,1]))
 
-  #plot num1s
+  #plot H-IFF scores
   ax[0].title.set_text("Virulence = " + str(virulences[x]))
   if x == 0: 
-    ax[0].set_ylabel("Proportion of \n1s in genotype".title())
+    ax[0].set_ylabel("H-IFF score of hosts".title())
   else:
     ax[0].yaxis.set_visible(False)
-  ax[0].plot([a[0] for a in hostNum1s], [a[1]/BIT_LENGTH for a in hostNum1s], 'o', color='red', markersize=0.1);
-  ax[0].plot([a[0] for a in paraNum1s], [a[1]/BIT_LENGTH for a in paraNum1s], 'o', color='blue', markersize=0.1);
+  ax[0].plot([a[0] for a in hostHiffScores], [a[1] for a in hostHiffScores], 'o', color='red', markersize=0.1, clip_on=False, zorder=100);
 
-  #plot abs hiff
+  #plot proportions
   if x == 0: 
-    ax[1].set_ylabel("Absolute HIFF Scores".title())
+    ax[1].set_ylabel("proportion of possible H-IFF".title())
   else:
     ax[1].yaxis.set_visible(False)
-  ax[1].plot([a[0] for a in hostAbsHiffScores], [a[1] for a in hostAbsHiffScores], 'o', color='red', markersize=0.1);
-  ax[1].plot([a[0] for a in paraAbsHiffScores], [a[1] for a in paraAbsHiffScores], 'o', color='blue', markersize=0.1);
+  ax[1].plot([a[0] for a in hostProportions], [a[1] for a in hostProportions], 'o', color='red', markersize=0.1, clip_on=False, zorder=100);
+  ax[1].plot([a[0] for a in paraProportions], [a[1] for a in paraProportions], 'o', color='blue', markersize=0.1, clip_on=False, zorder=100);
 
-  #plot relative hiff
+  #plot num1s
   if x == 0: 
-    ax[2].set_ylabel("Proportion of possible \nHIFF score".title())
+    ax[2].set_ylabel("number of 1s in genotype".title())
   else:
     ax[2].yaxis.set_visible(False)
-  ax[2].plot([a[0] for a in hostRelHiffScores], [a[1] for a in hostRelHiffScores], 'o', color='red', markersize=0.1, clip_on=False, zorder=100);
-  ax[2].plot([a[0] for a in paraRelHiffScores], [a[1] for a in paraRelHiffScores], 'o', color='blue', markersize=0.1, clip_on=False, zorder=100);
+  ax[2].plot([a[0] for a in hostNum1s], [a[1] for a in hostNum1s], 'o', color='red', markersize=0.1, clip_on=False, zorder=100);
+  ax[2].plot([a[0] for a in paraNum1s], [a[1] for a in paraNum1s], 'o', color='blue', markersize=0.1, clip_on=False, zorder=100);
 
   #plot conectedness
   if x == 0: 
     ax[3].set_ylabel("mask connectedness".title())
   else:
     ax[3].yaxis.set_visible(False)
-  ax[3].plot([a[0] for a in connectednesses], [a[1] for a in connectednesses], 'o', color='blue', markersize=0.1, clip_on=False, zorder=100);
+  ax[3].plot([a[0] for a in hostConnectednesses], [a[1] for a in hostConnectednesses], 'o', color='red', markersize=0.1, clip_on=False, zorder=100);
+  ax[3].plot([a[0] for a in paraConnectednesses], [a[1] for a in paraConnectednesses], 'o', color='blue', markersize=0.1, clip_on=False, zorder=100);
 
   #plot relative fitness
   if x == 0: 
@@ -304,7 +314,7 @@ for x in range(len(virulences)):
   else:
     ax[4].yaxis.set_visible(False)
   ax[4].set_xlabel("generations".title())
-  ax[4].plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1)
+  ax[4].plot([a[0] for a in relFitness], [a[1] for a in relFitness], '.', color="black", markersize=1, clip_on=False, zorder=100)
 
 #display graph
 plt.show()

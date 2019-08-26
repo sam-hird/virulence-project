@@ -1,3 +1,6 @@
+
+# implementation of matching game from paper
+
 from random import *
 from operator import attrgetter
 import matplotlib.pyplot as plt
@@ -14,11 +17,9 @@ PARA_BIAS         = 0.5
 MUTATE_CHANCE     = 0.03
 GENERATIONS       = 600
 USE_SEED          = None
-SELECTION_SIZE    = 2
+SELECTION_SIZE    = 5
 COMPETITION_SIZE  = 10
-THRESHOLD         = 30
-VIRULENCE         = 0.5
-RESOURCE_SHARING  = True
+THRESHOLD         = 34
 
 class Participant():
   """Host or Parasite parent"""
@@ -48,12 +49,12 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
     #mutate all participants and reset scores
     for host in hostList:
       host.mutate()
-      host.score = 0
+      host.score = 0.0
       host.victorIndices = []
       host.loserIndices = []
     for para in paraList:
       para.mutate()
-      para.score = 0
+      para.score = 0.0
       para.nLosses = 0
 
     #shuffle both lists and have the two populations compete pairwise
@@ -62,7 +63,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
       shuffle(hostList)
       for popIndex in range(POP_SIZE):
         x  = float(paraList[popIndex].bitList.count(True))
-        p1 = 0.5*(1.0+np.tanh((x-50.0)/7.0))
+        p1 = 0.5*(1.0 + np.tanh((x-50.0)/7.0))
         matching = True if random()<p1 else False
         nMatching = 0
         for n in range(BIT_LENGTH):

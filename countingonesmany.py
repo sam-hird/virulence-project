@@ -1,3 +1,6 @@
+
+# used for gathering data from many runs of this system and writing to file
+
 from random import *
 from operator import attrgetter
 import matplotlib.pyplot as plt
@@ -78,7 +81,7 @@ def mainLoop(nIters, iterOffset, hostList, paraList, virulence):
           para.score -= 1.0
         para.fitness = para.score
 
-
+    #count if generation was disengaged
     dGens += 1 if (hostWins==0) else 0
 
     for host in hostList:
@@ -116,13 +119,14 @@ def initLists():
     paraList += [Participant(PARA_BIAS)]
   return (hostList, paraList)
 
-
+# set or generate seed and print it to console
 if USE_SEED is None:
   USE_SEED = randrange(sys.maxsize)
   rng = Random(USE_SEED)
 print("Seed was:", USE_SEED)
 seed(USE_SEED)
 
+#get details from console args
 MUTATE_CHANCE = float(sys.argv[1])
 if sys.argv[2] == "phantom":
   VIRULENCE = -1

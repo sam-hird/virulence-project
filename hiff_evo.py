@@ -1,8 +1,6 @@
 #
-# H-IFF style 2
-# using mask and complement of mask for scoring
+# H-IFF simple evolutionary algorithm
 #
-
 
 from random import *
 from operator import attrgetter
@@ -11,14 +9,16 @@ import numpy as np
 import copy
 import sys
 import pylab
+import statistics
+import multiprocessing
 
 BIT_LENGTH       = 32
 POP_SIZE         = 25
 HOST_BIAS        = 0.5
 MUTATE_CHANCE    = 0.03
-GENERATIONS      = 6000
+GENERATIONS      = 600
 USE_SEED         = None
-SELECTION_SIZE   = 10
+SELECTION_SIZE   = 5
 
 
 class Participant():
@@ -88,9 +88,13 @@ def maskLists(mask, bits):
   return (list1, list2)
 
 
-def mainLoop(nIters, iterOffset, hostList):
+def mainLoop(nIters, iterOffset):
   global hostAbsHiffScores, hostRelHiffScores, hostNum1s
   global paraAbsHiffScores, paraRelHiffScores, paraNum1s
+
+  hostList = []
+  for x in range(POP_SIZE):
+    hostList   += [Participant(HOST_BIAS)]
 
   for iteration in range(iterOffset, nIters):
     #mutate all participants and recalculate scores
@@ -110,6 +114,7 @@ def mainLoop(nIters, iterOffset, hostList):
       newHostList.append(copy.deepcopy(best))
     hostList = newHostList
 
+  print(max([recursiveFitness(host.bitList) for host in hostList]))
   return hostList
 
 def initList():  
@@ -131,25 +136,33 @@ hostList = []
 hostNum1s           = [] #[[iteration, num1s]]
 hostAbsHiffScores   = [] #[[iteration, HiffScore]]                    # actual hiff scores 
 
-#initialize lists of participants
-hostList = initList()
-#do 600 iterations
-hostList = mainLoop(GENERATIONS, 0, hostList)
+##############use this for running many times###############
+if __name__ == '__main__':
+  for n in range(20):
+    jobs = []
+    for x in range(50):
+      p = multiprocessing.Process(target=mainLoop, args=(GENERATIONS,0))
+      jobs.append(p)
+      p.start()
+    p.join()
 
-#define sublot parameters
-f, (ax0, ax1) = plt.subplots(2, 1, sharex=True, subplot_kw={'xlim': {0,GENERATIONS}})
+##############use this for running once and graphing###############
 
-#plot num1s
-ax0.title.set_text("Proportion of 1s in genotype")
-ax0.set_ylim([0,1])
-ax0.plot([a[0] for a in hostNum1s], [a[1]/BIT_LENGTH for a in hostNum1s], 'o', color='red', markersize=0.1);
+# #do 600 iterations
+# hostList = mainLoop(GENERATIONS, 0)
 
-#plot abs hiff
-ax1.title.set_text("Absolute HIFF Scores")
-ax1.set_ylim([0,maxFitness([1]*BIT_LENGTH)])
-ax1.plot([a[0] for a in hostAbsHiffScores], [a[1] for a in hostAbsHiffScores], 'o', color='red', markersize=0.1);
+# #define sublot parameters
+# f, (ax0, ax1) = plt.subplots(2, 1, sharex=True, subplot_kw={'xlim': {0,GENERATIONS}})
 
-#display graph
-plt.show()
-for host in hostList:
-  print(host.bitList);
+# #plot num1s
+# ax0.title.set_text("Proportion of 1s in genotype")
+# ax0.set_ylim([0,1])
+# ax0.plot([a[0] for a in hostNum1s], [a[1]/BIT_LENGTH for a in hostNum1s], 'o', color='red', markersize=0.1);
+
+# #plot abs hiff
+# ax1.title.set_text("Absolute HIFF Scores")
+# ax1.set_ylim([0,maxFitness([1]*BIT_LENGTH)])
+# ax1.plot([a[0] for a in hostAbsHiffScores], [a[1] for a in hostAbsHiffScores], 'o', color='red', markersize=0.1);
+
+# #display graph
+# plt.show()
